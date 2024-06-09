@@ -29,6 +29,12 @@
             </header>
 
             <p class = "body">{{ post[ 'body' ] }}</p>
+            
+            <form action = "{{ url_for( 'blog.like', id = post[ 'id' ] ) }}" method = "post">
+                <input name = "like" class = "like" type="submit" value = "Like">
+                <label for="like">{{ post[ 'like_count' ] }}</label>
+            </form>
+
         </article>
 
         {% if not loop.last %}

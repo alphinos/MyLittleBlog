@@ -13,8 +13,11 @@ bp = Blueprint( 'blog', __name__ )
 def index():
     db = get_db()
     posts = db.execute(
-        'SELECT p.id, title, body, created, author_id, username'
+        'SELECT p.id, title, body, created, author_id, username, COALESCE( like_count, 0 ) AS like_count'
         ' FROM post p JOIN user u ON p.author_id = u.id'
+        ' LEFT JOIN ('
+        ' SELECT post_id, COUNT(*) AS like_count FROM likes GROUP BY post_id'
+        ') l ON p.id = l.post_id'
         ' ORDER BY created DESC'
     ).fetchall()
     return render_template( 'blog/index.html', posts = posts )
@@ -23,7 +26,6 @@ def index():
 @login_required
 def create():
     if request.method == 'POST':
-        print( request.form )
         title = request.form.get('title')
         body = request.form.get('body')
         error = None
@@ -66,8 +68,8 @@ def update( id ):
     post = get_post( id )
 
     if request.method == 'POST':
-        title = request.form[ 'title' ]
-        body = request.form[ 'body' ]
+        title = request.form.get( 'title' )
+        body = request.form.get( 'body' )
         error = None
 
         if not title:
@@ -88,11 +90,43 @@ def update( id ):
     
     return render_template( 'blog/update.html', post = post )
 
-@bp.route('/<int:id>/delete', methods = ( 'POST', ))
+@bp.route('/<int:id>/delete', methods = ( 'POST', ) )
 @login_required
 def delete( id ):
     get_post( id )
     db = get_db()
     db.execute( 'DELETE FROM post WHERE id = ?', ( id,  ) )
+    db.execute(
+                'DELETE FROM likes WHERE post_id = ?',
+                ( id, )
+            )
     db.commit()
     return redirect( url_for( 'blog.index' ) )
+
+@bp.route( '/<int:id>/like', methods = ( 'POST', ) )
+@login_required
+def like( id ):
+    if request.method == 'POST':
+        
+        db = get_db()
+
+        like = db.execute(
+            'SELECT * FROM likes WHERE user_id = ? AND post_id = ?',
+            ( g.user[ 'id' ], id )
+        ).fetchone()
+
+        if like is None:
+            db.execute(
+                'INSERT INTO likes (user_id, post_id)'
+                ' VALUES (?, ?)',
+                ( g.user[ 'id' ], id )
+            )
+            db.commit()
+        else:
+            db.execute(
+                'DELETE FROM likes WHERE user_id = ? AND post_id = ?',
+                ( g.user[ 'id' ], id )
+            )
+            db.commit()
+
+        return redirect( url_for( 'blog.index' ) )

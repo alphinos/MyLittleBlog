@@ -128,7 +128,18 @@ input.danger {
     color: #cc2f2e;
 }
   
-input[type=submit] {
+/* input[type=submit] {
     align-self: start;
     min-width: 10em;
-  }
+} */
+
+.like {
+    background-image: url( "icons/images.png" );
+    background-size: contain;
+    background-repeat: no-repeat;
+    border: none;
+    width: 2em;
+    height: 2em;
+    cursor: pointer;
+    color: transparent;
+}
