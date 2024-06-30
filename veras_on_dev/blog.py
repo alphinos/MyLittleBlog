@@ -130,3 +130,12 @@ def like( id ):
             db.commit()
 
         return redirect( url_for( 'blog.index' ) )
+
+@bp.route( 'post/<int:id>', methods = ( 'GET', 'POST' ) )
+def post( id ):
+    post = get_post( id )
+
+    if request.method == 'POST':
+        return redirect
+
+    return render_template( 'blog/post.html', post = post )
